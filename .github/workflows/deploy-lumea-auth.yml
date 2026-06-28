@@ -33,12 +33,11 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: lumea-auth/go.sum
 
-      # ── 3. Build for Lambda (linux/amd64, static binary named "bootstrap") ───
+      # ── 3. Build for Lambda (linux/arm64, static binary named "bootstrap") ───
       - name: Build
         working-directory: lumea-auth
         run: |
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
-            go build -ldflags="-s -w" -o bootstrap .
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o bootstrap .
           zip -j deployment.zip bootstrap
 
       # ── 4. Configure AWS credentials ─────────────────────────────────────────
