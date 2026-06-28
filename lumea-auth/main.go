@@ -29,7 +29,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
+	httpadapter "github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 
@@ -65,12 +65,12 @@ func main() {
 
 	r := router.Setup(cfg, db, rdb, log)
 
-	// ── Lambda mode ────────────────────────────────────────────────────────────
+	// ── Lambda mode (Function URL uses payload format v2) ─────────────────────
 	if os.Getenv("AWS_LAMBDA_RUNTIME_API") != "" {
 		log.Info("running in AWS Lambda mode")
-		ginLambda := ginadapter.New(r)
-		lambda.Start(func(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-			return ginLambda.ProxyWithContext(ctx, req)
+		adapter := httpadapter.NewV2(r)
+		lambda.Start(func(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+			return adapter.ProxyWithContext(ctx, req)
 		})
 		return
 	}
