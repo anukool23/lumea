@@ -1,0 +1,15 @@
+# Binaries
+bin/
+tmp/
+
+# Environment
+.env
+
+# Generated docs (regenerate with `make swagger`)
+docs/swagger.json
+docs/swagger.yaml
+docs/docs.go
+
+# Go
+*.test
+vendor/

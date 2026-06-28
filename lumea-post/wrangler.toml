@@ -1,0 +1,2 @@
+# DEPRECATED — lumea-post now deploys on AWS Lambda, not Cloudflare Workers.
+# This file can be safely deleted.

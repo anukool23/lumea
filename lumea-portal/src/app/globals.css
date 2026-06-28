@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #18181b;
+  --muted: #71717a;
+  --border: #e4e4e7;
+  --card: #fafafa;
+}
+
+@layer base {
+  * { @apply border-zinc-200; }
+  body { @apply text-zinc-900; }
+  h1, h2, h3, h4 { @apply font-semibold tracking-tight; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 bg-zinc-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors disabled:opacity-50;
+  }
+  .btn-outline {
+    @apply inline-flex items-center gap-2 border border-zinc-300 text-zinc-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-zinc-50 transition-colors;
+  }
+  .card { @apply bg-white rounded-xl border border-zinc-200; }
+  .prose-lumea {
+    @apply prose prose-zinc max-w-none prose-headings:font-semibold prose-a:text-zinc-900 prose-a:underline-offset-4;
+  }
+}
+
+/* Premium gate fade */
+.premium-fade {
+  -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+}
+
+/* Reading sepia theme */
+.theme-sepia {
+  background-color: #f8f1e3;
+  color: #4a3728;
+}

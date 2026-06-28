@@ -1,0 +1,26 @@
+{
+  "name": "lumea-post",
+  "version": "1.0.0",
+  "description": "Lumea Post Service — Hono + AWS Lambda + MongoDB",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/local.ts",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@hono/swagger-ui": "^0.4.1",
+    "@hono/zod-openapi": "^0.16.0",
+    "@upstash/redis": "^1.34.0",
+    "hono": "^4.5.0",
+    "mongodb": "^6.8.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@hono/node-server": "^1.12.0",
+    "esbuild": "^0.23.0",
+    "tsx": "^4.17.0",
+    "typescript": "^5.5.4"
+  }
+}

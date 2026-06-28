@@ -1,0 +1,30 @@
+{
+  "name": "lumea-content",
+  "version": "1.0.0",
+  "description": "Lumea Content Service — AWS Lambda (Hono)",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/local.ts",
+    "type-check": "tsc --noEmit",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --minify --external:@aws-sdk/*",
+    "deploy": "npm run build && zip -j dist/lumea-content.zip dist/index.js && echo 'Upload dist/lumea-content.zip to Lambda'"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.12.0",
+    "@hono/swagger-ui": "^0.4.1",
+    "@hono/zod-openapi": "^0.16.0",
+    "@opensearch-project/opensearch": "^2.13.0",
+    "@upstash/redis": "^1.34.0",
+    "hono": "^4.5.0",
+    "mongodb": "^6.8.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "aws-lambda": "^1.0.7",
+    "@types/aws-lambda": "^8.10.143",
+    "esbuild": "^0.23.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.4"
+  }
+}

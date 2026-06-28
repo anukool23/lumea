@@ -1,0 +1,88 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Lumea.ink — root .gitignore
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+**/.env
+**/.env.local
+**/.env.*.local
+**/.env.production
+**/.env.staging
+# Keep examples — they document required vars
+!**/.env.example
+!**/.env.local.example
+
+# ── Go ────────────────────────────────────────────────────────────────────────
+# Build outputs
+**/bootstrap
+**/deployment.zip
+**/tmp/main
+**/tmp/build-errors.log
+**/tmp/
+
+# Air (live reload)
+**/.air.toml
+
+# Test cache & coverage
+**/coverage.out
+**/coverage.html
+
+# ── Node / Next.js ────────────────────────────────────────────────────────────
+**/node_modules/
+**/.next/
+**/out/
+**/.turbo/
+**/dist/
+**/.cache/
+
+# Next.js build output
+lumea-portal/.next/
+lumea-portal/out/
+lumea-dashboard/.next/
+lumea-dashboard/out/
+
+# ── Python (lumea-ai) ─────────────────────────────────────────────────────────
+**/__pycache__/
+**/*.py[cod]
+**/*.pyo
+**/.venv/
+**/venv/
+**/*.egg-info/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+**/*.log
+**/logs/
+
+# ── OS / Editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── AWS / Terraform ───────────────────────────────────────────────────────────
+**/.aws/
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/.terraform/
+**/*.tfvars
+!**/terraform.tfvars.example
+
+# ── Cloudflare Wrangler ───────────────────────────────────────────────────────
+# wrangler.toml is committed (contains non-secret config)
+# but local dev state is not
+**/.wrangler/
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.zip
+*.tar.gz
