@@ -41,17 +41,22 @@ func Setup(cfg *config.Config, db *gorm.DB, rdb *redis.Client, log *zap.Logger) 
 	})
 
 	// ── Swagger UI ────────────────────────────────────────────────────────────
-	// Serve doc.json explicitly so we get real error logs if spec generation fails
-	r.GET("/docs/doc.json", func(c *gin.Context) {
-		doc, err := swag.ReadDoc()
-		if err != nil {
-			logger.Error("swagger: failed to render spec", zap.Error(err))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// Intercept doc.json inside the wildcard to get real error logs if spec fails.
+	// Gin does not allow a static /docs/doc.json route alongside /docs/*any.
+	swaggerUIHandler := ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("doc.json"))
+	r.GET("/docs/*any", func(c *gin.Context) {
+		if c.Param("any") == "/doc.json" {
+			doc, err := swag.ReadDoc()
+			if err != nil {
+				logger.Error("swagger: failed to render spec", zap.Error(err))
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.Data(http.StatusOK, "application/json; charset=utf-8", []byte(doc))
 			return
 		}
-		c.Data(http.StatusOK, "application/json; charset=utf-8", []byte(doc))
+		swaggerUIHandler(c)
 	})
-	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("doc.json")))
 
 	// ── Wire up dependencies ───────────────────────────────────────────────────
 	userRepo := repository.NewUserRepository(db)
