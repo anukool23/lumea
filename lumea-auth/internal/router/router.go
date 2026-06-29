@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/swaggo/swag"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -13,6 +14,7 @@ import (
 
 	"lumea-auth/internal/config"
 	"lumea-auth/internal/handlers"
+	"lumea-auth/internal/logger"
 	"lumea-auth/internal/middleware"
 	"lumea-auth/internal/repository"
 	"lumea-auth/internal/services"
@@ -38,8 +40,18 @@ func Setup(cfg *config.Config, db *gorm.DB, rdb *redis.Client, log *zap.Logger) 
 		})
 	})
 
-	// ── Swagger UI ─────────────────────────────────────────────────────────────
-	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// ── Swagger UI ────────────────────────────────────────────────────────────
+	// Serve doc.json explicitly so we get real error logs if spec generation fails
+	r.GET("/docs/doc.json", func(c *gin.Context) {
+		doc, err := swag.ReadDoc()
+		if err != nil {
+			logger.Error("swagger: failed to render spec", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.Data(http.StatusOK, "application/json; charset=utf-8", []byte(doc))
+	})
+	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("doc.json")))
 
 	// ── Wire up dependencies ───────────────────────────────────────────────────
 	userRepo := repository.NewUserRepository(db)
