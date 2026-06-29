@@ -33,14 +33,21 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: lumea-auth/go.sum
 
-      # ── 3. Build for Lambda (linux/arm64, static binary named "bootstrap") ───
+      # ── 3. Generate Swagger docs ──────────────────────────────────────────────
+      - name: Generate Swagger docs
+        working-directory: lumea-auth
+        run: |
+          go install github.com/swaggo/swag/cmd/swag@latest
+          swag init --generalInfo main.go --output docs
+
+      # ── 4. Build for Lambda (linux/arm64, static binary named "bootstrap") ───
       - name: Build
         working-directory: lumea-auth
         run: |
           GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o bootstrap .
           zip -j deployment.zip bootstrap
 
-      # ── 4. Configure AWS credentials ─────────────────────────────────────────
+      # ── 5. Configure AWS credentials ─────────────────────────────────────────
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -48,7 +55,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ env.AWS_REGION }}
 
-      # ── 5. Upload new code to Lambda ──────────────────────────────────────────
+      # ── 6. Upload new code to Lambda ──────────────────────────────────────────
       - name: Update function code
         working-directory: lumea-auth
         run: |
@@ -57,14 +64,14 @@ jobs:
             --zip-file fileb://deployment.zip \
             --no-cli-pager
 
-      # ── 6. Wait until Lambda finishes updating ────────────────────────────────
+      # ── 7. Wait until Lambda finishes updating ────────────────────────────────
       - name: Wait for update to complete
         run: |
           aws lambda wait function-updated \
             --function-name "$FUNCTION_NAME" \
             --no-cli-pager
 
-      # ── 7. Print deployed version info ────────────────────────────────────────
+      # ── 8. Print deployed version info ────────────────────────────────────────
       - name: Deployment summary
         run: |
           VERSION=$(aws lambda get-function-configuration \
