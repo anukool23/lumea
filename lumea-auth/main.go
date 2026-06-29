@@ -33,7 +33,7 @@ import (
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 
-	_ "lumea-auth/docs" // registers swagger spec via init()
+	lumeadocs "lumea-auth/docs" // registers swagger spec via init()
 	"lumea-auth/internal/config"
 	"lumea-auth/internal/database"
 	"lumea-auth/internal/logger"
@@ -42,6 +42,12 @@ import (
 
 func main() {
 	_ = godotenv.Load()
+
+	// Override swagger host/scheme from env so the same binary works locally and on Lambda
+	if h := os.Getenv("SWAGGER_HOST"); h != "" {
+		lumeadocs.SwaggerInfo.Host = h
+		lumeadocs.SwaggerInfo.Schemes = []string{"https"}
+	}
 
 	cfg := config.Load()
 
