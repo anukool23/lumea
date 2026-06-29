@@ -31,20 +31,16 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	httpadapter "github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 	"github.com/joho/godotenv"
-	"github.com/swaggo/swag"
 	"go.uber.org/zap"
 
+	_ "lumea-auth/docs" // registers swagger spec via init()
 	"lumea-auth/internal/config"
 	"lumea-auth/internal/database"
-	lumeadocs "lumea-auth/docs"
 	"lumea-auth/internal/logger"
 	"lumea-auth/internal/router"
 )
 
 func main() {
-	// Explicitly register swagger spec — blank import alone doesn't work with CGO_ENABLED=0
-	swag.Register(lumeadocs.SwaggerInfo.InstanceName(), lumeadocs.SwaggerInfo)
-
 	_ = godotenv.Load()
 
 	cfg := config.Load()
