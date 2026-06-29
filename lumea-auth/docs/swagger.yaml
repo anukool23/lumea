@@ -1,0 +1,870 @@
+basePath: /api
+definitions:
+  models.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/models.UserProfile'
+    type: object
+  models.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  models.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  models.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  models.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  models.OTPDebugResponse:
+    properties:
+      message:
+        type: string
+      otp:
+        description: never in prod
+        type: string
+    type: object
+  models.PublicProfile:
+    properties:
+      badges:
+        items:
+          type: string
+        type: array
+      bio:
+        type: string
+      cover_image:
+        type: string
+      followers_count:
+        type: integer
+      following_count:
+        type: integer
+      github:
+        type: string
+      id:
+        type: string
+      ink_score:
+        type: integer
+      interests:
+        items:
+          type: string
+        type: array
+      is_following:
+        description: populated per-request
+        type: boolean
+      is_partner:
+        type: boolean
+      joined_at:
+        type: string
+      linkedin:
+        type: string
+      name:
+        type: string
+      profile_picture:
+        type: string
+      supporter_status:
+        $ref: '#/definitions/models.SupporterStatus'
+      tagline:
+        type: string
+      twitter:
+        type: string
+      username:
+        type: string
+      website:
+        type: string
+    type: object
+  models.RegisterRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        maxLength: 50
+        minLength: 2
+        type: string
+      last_name:
+        maxLength: 50
+        minLength: 2
+        type: string
+      password:
+        minLength: 8
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    - username
+    type: object
+  models.ResendOTPRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  models.ResetPasswordRequest:
+    properties:
+      new_password:
+        minLength: 8
+        type: string
+      token:
+        type: string
+    required:
+    - new_password
+    - token
+    type: object
+  models.SupporterStatus:
+    enum:
+    - NONE
+    - BRONZE
+    - SILVER
+    - GOLD
+    - PLATINUM
+    - LIFETIME
+    - FOUNDING
+    type: string
+    x-enum-varnames:
+    - SupporterNone
+    - SupporterBronze
+    - SupporterSilver
+    - SupporterGold
+    - SupporterPlatinum
+    - SupporterLifetime
+    - SupporterFounding
+  models.UpdateAvatarRequest:
+    properties:
+      profile_picture:
+        type: string
+    required:
+    - profile_picture
+    type: object
+  models.UpdateCoverRequest:
+    properties:
+      cover_image:
+        type: string
+    required:
+    - cover_image
+    type: object
+  models.UpdateProfileRequest:
+    properties:
+      bio:
+        maxLength: 500
+        type: string
+      first_name:
+        type: string
+      github:
+        type: string
+      interests:
+        items:
+          type: string
+        type: array
+      last_name:
+        type: string
+      linkedin:
+        type: string
+      name:
+        type: string
+      tagline:
+        maxLength: 160
+        type: string
+      twitter:
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+      website:
+        type: string
+    type: object
+  models.UserProfile:
+    properties:
+      badges:
+        items:
+          type: string
+        type: array
+      bio:
+        type: string
+      cover_image:
+        type: string
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      first_name:
+        type: string
+      followers_count:
+        type: integer
+      following_count:
+        type: integer
+      github:
+        type: string
+      id:
+        type: string
+      ink_score:
+        type: integer
+      interests:
+        items:
+          type: string
+        type: array
+      is_banned:
+        type: boolean
+      is_commenting_restricted:
+        type: boolean
+      is_partner:
+        type: boolean
+      is_verified:
+        type: boolean
+      joined_at:
+        type: string
+      last_login_at:
+        type: string
+      last_name:
+        type: string
+      linkedin:
+        type: string
+      name:
+        type: string
+      profile_picture:
+        type: string
+      role:
+        $ref: '#/definitions/models.UserRole'
+      supporter_expiry_date:
+        type: string
+      supporter_status:
+        $ref: '#/definitions/models.SupporterStatus'
+      tagline:
+        type: string
+      twitter:
+        type: string
+      username:
+        type: string
+      website:
+        type: string
+    type: object
+  models.UserRole:
+    enum:
+    - USER
+    - EDITOR
+    - ADMIN
+    type: string
+    x-enum-varnames:
+    - RoleUser
+    - RoleEditor
+    - RoleAdmin
+  models.VerifyOTPRequest:
+    properties:
+      email:
+        type: string
+      otp:
+        type: string
+    required:
+    - email
+    - otp
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: dev@lumea.ink
+    name: Lumea Dev Team
+  description: User authentication, registration, and profile management for Lumea.ink
+  license:
+    name: Proprietary
+  termsOfService: https://lumea.ink/terms
+  title: Lumea Auth Service
+  version: "1.0"
+paths:
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Sends a password reset token to the registered email. Always returns
+        200 to prevent email enumeration.
+      parameters:
+      - description: Email
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.OTPDebugResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - APIKeyAuth: []
+      summary: Forgot password
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates user with email and password. Returns JWT + user
+        profile.
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AuthResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Invalid credentials / email not verified / account suspended
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - APIKeyAuth: []
+      summary: Email / password login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: Blacklists the current JWT in Redis. The token cannot be used after
+        this.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      - APIKeyAuth: []
+      summary: Logout
+      tags:
+      - auth
+  /auth/me:
+    get:
+      description: Returns the authenticated user's full profile (decoded from JWT
+        + DB lookup).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserProfile'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      - APIKeyAuth: []
+      summary: Get current user
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates an unverified account and sends a 6-digit OTP to the email.
+        Use /verify-otp to activate.
+      parameters:
+      - description: Registration payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: OTP sent (otp field only present when DEBUG_OTP=true)
+          schema:
+            $ref: '#/definitions/models.OTPDebugResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Email or username taken
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - APIKeyAuth: []
+      summary: Register new user
+      tags:
+      - auth
+  /auth/resend-otp:
+    post:
+      consumes:
+      - application/json
+      description: Generates and resends a new OTP. The previous OTP is overwritten.
+      parameters:
+      - description: Email
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ResendOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.OTPDebugResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Email not registered
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - APIKeyAuth: []
+      summary: Resend OTP
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Resets the password using the token received via email. All active
+        sessions are invalidated.
+      parameters:
+      - description: Reset token and new password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Invalid/expired token or weak password
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - APIKeyAuth: []
+      summary: Reset password
+      tags:
+      - auth
+  /auth/verify-otp:
+    post:
+      consumes:
+      - application/json
+      description: Verifies the 6-digit OTP sent during registration. Returns a JWT
+        on success.
+      parameters:
+      - description: OTP payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.VerifyOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AuthResponse'
+        "400":
+          description: Invalid or expired OTP
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - APIKeyAuth: []
+      summary: Verify email OTP
+      tags:
+      - auth
+  /users/{handle}:
+    get:
+      description: Returns a publicly visible profile by username or UUID. Optional
+        auth header populates is_following.
+      parameters:
+      - description: Username or user UUID
+        in: path
+        name: handle
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PublicProfile'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "410":
+          description: Account suspended
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - APIKeyAuth: []
+      summary: Get public profile
+      tags:
+      - users
+  /users/{userId}/follow:
+    delete:
+      description: Unfollow a user. Updates follower/following counts atomically.
+      parameters:
+      - description: Target user UUID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Not following
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      - BearerAuth: []
+      - APIKeyAuth: []
+      summary: Unfollow a user
+      tags:
+      - users
+    post:
+      description: Follow another user. Updates follower/following counts atomically.
+      parameters:
+      - description: Target user UUID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Already following / self-follow
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      - BearerAuth: []
+      - APIKeyAuth: []
+      summary: Follow a user
+      tags:
+      - users
+  /users/{userId}/followers:
+    get:
+      description: Returns paginated list of users who follow the given user.
+      parameters:
+      - description: User UUID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 50)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/models.PublicProfile'
+                type: array
+              page:
+                type: integer
+              total:
+                type: integer
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - APIKeyAuth: []
+      summary: Get user's followers
+      tags:
+      - users
+  /users/{userId}/following:
+    get:
+      description: Returns paginated list of users the given user follows.
+      parameters:
+      - description: User UUID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 50)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/models.PublicProfile'
+                type: array
+              page:
+                type: integer
+              total:
+                type: integer
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - APIKeyAuth: []
+      summary: Get users followed by user
+      tags:
+      - users
+  /users/profile:
+    get:
+      description: Returns the authenticated user's full profile from the database.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserProfile'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      - APIKeyAuth: []
+      summary: Get own profile
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Updates bio, tagline, username, social links, interests. All fields
+        optional.
+      parameters:
+      - description: Fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserProfile'
+        "400":
+          description: Validation or username conflict
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      - APIKeyAuth: []
+      summary: Update profile
+      tags:
+      - users
+  /users/profile/avatar:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the profile picture URL (URL should be a Cloudinary CDN
+        URL uploaded via Media Service).
+      parameters:
+      - description: Profile picture URL
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateAvatarRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      - APIKeyAuth: []
+      summary: Update profile picture
+      tags:
+      - users
+  /users/profile/cover:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the cover image URL.
+      parameters:
+      - description: Cover image URL
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateCoverRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      - APIKeyAuth: []
+      summary: Update cover image
+      tags:
+      - users
+  /users/suggested:
+    get:
+      description: Returns up to 10 users ordered by followers count, excluding those
+        already followed.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.PublicProfile'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      - APIKeyAuth: []
+      summary: Suggested users to follow
+      tags:
+      - users
+securityDefinitions:
+  APIKeyAuth:
+    description: BFF API key. Use any one of the 4 keys from API_KEYS env (split on
+      "-").
+    in: header
+    name: X-API-Key
+    type: apiKey
+  BearerAuth:
+    description: 'JWT token. Format: "Bearer <token>"'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
