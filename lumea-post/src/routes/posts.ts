@@ -55,7 +55,7 @@ const createPostRoute = createRoute({
   tags: ["Posts"],
   summary: "Create a post",
   description: "Creates a new post as DRAFT or SCHEDULED. Content is HTML from Tiptap editor.",
-  security: [{ BearerAuth: [] }],
+  security: [{ BearerAuth: [] }, { APIKeyAuth: [] }],
   request: {
     body: { content: { "application/json": { schema: CreatePostSchema } }, required: true },
   },
@@ -90,7 +90,7 @@ const getMyPostsRoute = createRoute({
   tags: ["Posts"],
   summary: "Get my posts",
   description: "Returns paginated list of the authenticated author's posts. Filter by status.",
-  security: [{ BearerAuth: [] }],
+  security: [{ BearerAuth: [] }, { APIKeyAuth: [] }],
   request: { query: PaginationQuery },
   responses: {
     200: { description: "Post list", content: { "application/json": { schema: PostListResponseSchema } } },
@@ -117,7 +117,7 @@ const getStatsRoute = createRoute({
   tags: ["Posts"],
   summary: "Writer post stats",
   description: "Returns aggregate stats: total posts, views, likes, comments.",
-  security: [{ BearerAuth: [] }],
+  security: [{ BearerAuth: [] }, { APIKeyAuth: [] }],
   responses: {
     200: {
       description: "Stats",
@@ -155,7 +155,7 @@ const getPostRoute = createRoute({
   tags: ["Posts"],
   summary: "Get a post",
   description: "Returns a post. Drafts are only visible to the author.",
-  security: [{ BearerAuth: [] }],
+  security: [{ BearerAuth: [] }, { APIKeyAuth: [] }],
   request: { params: PostIdParam },
   responses: {
     200: { description: "Post", content: { "application/json": { schema: PostResponseSchema } } },
@@ -187,7 +187,7 @@ const updatePostRoute = createRoute({
   tags: ["Posts"],
   summary: "Update a post",
   description: "Updates post content, tags, cover image, etc. All fields are optional.",
-  security: [{ BearerAuth: [] }],
+  security: [{ BearerAuth: [] }, { APIKeyAuth: [] }],
   request: {
     params: PostIdParam,
     body: { content: { "application/json": { schema: UpdatePostSchema } }, required: true },
@@ -224,7 +224,7 @@ const deletePostRoute = createRoute({
   tags: ["Posts"],
   summary: "Delete a post",
   description: "Permanently deletes a post. This action cannot be undone.",
-  security: [{ BearerAuth: [] }],
+  security: [{ BearerAuth: [] }, { APIKeyAuth: [] }],
   request: { params: PostIdParam },
   responses: {
     200: { description: "Deleted", content: { "application/json": { schema: MessageResponseSchema } } },
@@ -256,7 +256,7 @@ const publishPostRoute = createRoute({
   tags: ["Posts"],
   summary: "Publish a post",
   description: "Publishes a DRAFT or SCHEDULED post immediately. Pass scheduledAt to schedule instead.",
-  security: [{ BearerAuth: [] }],
+  security: [{ BearerAuth: [] }, { APIKeyAuth: [] }],
   request: {
     params: PostIdParam,
     body: {
@@ -301,7 +301,7 @@ const unpublishPostRoute = createRoute({
   tags: ["Posts"],
   summary: "Unpublish a post",
   description: "Moves a PUBLISHED post back to DRAFT.",
-  security: [{ BearerAuth: [] }],
+  security: [{ BearerAuth: [] }, { APIKeyAuth: [] }],
   request: { params: PostIdParam },
   responses: {
     200: { description: "Unpublished post", content: { "application/json": { schema: PostResponseSchema } } },
@@ -333,7 +333,7 @@ const togglePremiumRoute = createRoute({
   tags: ["Posts"],
   summary: "Toggle premium gate",
   description: "Locks or unlocks a post behind the supporter paywall.",
-  security: [{ BearerAuth: [] }],
+  security: [{ BearerAuth: [] }, { APIKeyAuth: [] }],
   request: {
     params: PostIdParam,
     body: { content: { "application/json": { schema: TogglePremiumSchema } }, required: true },
@@ -369,7 +369,7 @@ const updateCoverRoute = createRoute({
   tags: ["Posts"],
   summary: "Update cover image",
   description: "Sets the cover image URL (Cloudinary CDN URL from Media Service).",
-  security: [{ BearerAuth: [] }],
+  security: [{ BearerAuth: [] }, { APIKeyAuth: [] }],
   request: {
     params: PostIdParam,
     body: { content: { "application/json": { schema: UpdateCoverSchema } }, required: true },
@@ -405,7 +405,7 @@ const archivePostRoute = createRoute({
   tags: ["Posts"],
   summary: "Archive a post",
   description: "Moves a post to ARCHIVED status. Archived posts are not publicly visible.",
-  security: [{ BearerAuth: [] }],
+  security: [{ BearerAuth: [] }, { APIKeyAuth: [] }],
   request: { params: PostIdParam },
   responses: {
     200: { description: "Archived post", content: { "application/json": { schema: PostResponseSchema } } },
