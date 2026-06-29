@@ -1,5 +1,6 @@
-import { Db, ObjectId, Filter, Sort } from "mongodb";
-import { COLLECTIONS, PostDocument, PostStatus } from "../models/post";
+import { Db, Filter, Sort } from "mongodb";
+import { PostDocument, PostStatus } from "../models/post";
+import { COLLECTIONS } from "../lib/mongodb";
 
 export interface PostFilter {
   authorId?: string;

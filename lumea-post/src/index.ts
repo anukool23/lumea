@@ -11,6 +11,22 @@ import postsRouter from "./routes/posts";
 
 const app = new OpenAPIHono<AppEnv>();
 
+// ── Register security schemes via registry (not app.doc components) ───────────
+
+app.openAPIRegistry.registerComponent("securitySchemes", "BearerAuth", {
+  type: "http",
+  scheme: "bearer",
+  bearerFormat: "JWT",
+  description: "JWT issued by lumea-auth service",
+});
+
+app.openAPIRegistry.registerComponent("securitySchemes", "APIKeyAuth", {
+  type: "apiKey",
+  in: "header",
+  name: "X-API-Key",
+  description: "BFF API key. Use any one of the 4 keys from API_KEYS env (split on '-').",
+});
+
 // ── Global middleware ─────────────────────────────────────────────────────────
 
 app.use("*", requestLogger);        // structured JSON logging + X-Request-ID
@@ -55,23 +71,6 @@ app.doc("/openapi.json", {
     { url: serverUrl, description: "Active server" },
     { url: "http://localhost:8787", description: "Local dev" },
   ],
-  components: {
-    securitySchemes: {
-      BearerAuth: {
-        type: "http",
-        scheme: "bearer",
-        bearerFormat: "JWT",
-        description: "JWT issued by lumea-auth service",
-      },
-      APIKeyAuth: {
-        type: "apiKey",
-        in: "header",
-        name: "X-API-Key",
-        description:
-          "BFF API key. Use any one of the 4 keys from API_KEYS env (split on '-').",
-      },
-    },
-  },
 });
 
 app.get("/docs", swaggerUI({ url: "/openapi.json" }));

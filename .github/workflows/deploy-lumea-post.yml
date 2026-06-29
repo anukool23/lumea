@@ -31,13 +31,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: lumea-post/package-lock.json
 
       # ── 3. Install dependencies ───────────────────────────────────────────────
+      # Using npm install (not ci) until package-lock.json is updated locally
+      # after upgrading @hono/zod-openapi to ^0.18.0
       - name: Install dependencies
         working-directory: lumea-post
-        run: npm ci
+        run: npm install
 
       # ── 4. Type check ─────────────────────────────────────────────────────────
       - name: Type check

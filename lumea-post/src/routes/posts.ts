@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { HTTPException } from "hono/http-exception";
 import type { AppEnv } from "../types/env.d";
-import { requireAuth } from "../middleware/auth";
+import { getAuthUser } from "../middleware/auth";
 import { PostService, NotFoundError, ForbiddenError, BadRequestError } from "../services/post.service";
 import { PostRepository } from "../repository/post.repository";
 import { getDb } from "../lib/mongodb";
@@ -66,9 +66,8 @@ const createPostRoute = createRoute({
   },
 });
 
-app.use("/api/posts", requireAuth);
 app.openapi(createPostRoute, async (c) => {
-  const user = c.get("user");
+  const user = await getAuthUser(c);
   const input = c.req.valid("json");
 
   const svc = await getService(process.env.MONGODB_URI!);
@@ -99,7 +98,7 @@ const getMyPostsRoute = createRoute({
 });
 
 app.openapi(getMyPostsRoute, async (c) => {
-  const user = c.get("user");
+  const user = await getAuthUser(c);
   const { page, limit, status } = c.req.valid("query");
 
   const svc = await getService(process.env.MONGODB_URI!);
@@ -139,7 +138,7 @@ const getStatsRoute = createRoute({
 });
 
 app.openapi(getStatsRoute, async (c) => {
-  const user = c.get("user");
+  const user = await getAuthUser(c);
   const svc = await getService(process.env.MONGODB_URI!);
   const stats = await svc.getStats(user.user_id);
   return c.json(stats);
@@ -163,9 +162,8 @@ const getPostRoute = createRoute({
   },
 });
 
-app.use("/api/posts/:postId", requireAuth);
 app.openapi(getPostRoute, async (c) => {
-  const user = c.get("user");
+  const user = await getAuthUser(c);
   const { postId } = c.req.valid("param");
 
   const svc = await getService(process.env.MONGODB_URI!);
@@ -201,7 +199,7 @@ const updatePostRoute = createRoute({
 });
 
 app.openapi(updatePostRoute, async (c) => {
-  const user = c.get("user");
+  const user = await getAuthUser(c);
   const { postId } = c.req.valid("param");
   const input = c.req.valid("json");
 
@@ -234,7 +232,7 @@ const deletePostRoute = createRoute({
 });
 
 app.openapi(deletePostRoute, async (c) => {
-  const user = c.get("user");
+  const user = await getAuthUser(c);
   const { postId } = c.req.valid("param");
 
   const svc = await getService(process.env.MONGODB_URI!);
@@ -273,7 +271,7 @@ const publishPostRoute = createRoute({
 });
 
 app.openapi(publishPostRoute, async (c) => {
-  const user = c.get("user");
+  const user = await getAuthUser(c);
   const { postId } = c.req.valid("param");
 
   let scheduledAt: string | undefined;
@@ -311,7 +309,7 @@ const unpublishPostRoute = createRoute({
 });
 
 app.openapi(unpublishPostRoute, async (c) => {
-  const user = c.get("user");
+  const user = await getAuthUser(c);
   const { postId } = c.req.valid("param");
 
   const svc = await getService(process.env.MONGODB_URI!);
@@ -346,7 +344,7 @@ const togglePremiumRoute = createRoute({
 });
 
 app.openapi(togglePremiumRoute, async (c) => {
-  const user = c.get("user");
+  const user = await getAuthUser(c);
   const { postId } = c.req.valid("param");
   const { isPremium } = c.req.valid("json");
 
@@ -382,7 +380,7 @@ const updateCoverRoute = createRoute({
 });
 
 app.openapi(updateCoverRoute, async (c) => {
-  const user = c.get("user");
+  const user = await getAuthUser(c);
   const { postId } = c.req.valid("param");
   const { coverImage } = c.req.valid("json");
 
@@ -415,7 +413,7 @@ const archivePostRoute = createRoute({
 });
 
 app.openapi(archivePostRoute, async (c) => {
-  const user = c.get("user");
+  const user = await getAuthUser(c);
   const { postId } = c.req.valid("param");
 
   const svc = await getService(process.env.MONGODB_URI!);

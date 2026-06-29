@@ -1,40 +1,50 @@
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
+import type { Context } from "hono";
 import type { JWTPayload, HonoVariables } from "../types/env.d";
 import { getRedis, RedisKeys } from "../lib/redis";
 
 /**
- * Verifies the JWT using the Web Crypto API (HS256).
- * Reads JWT_SECRET from process.env — no Auth Service round-trip.
- * Checks Upstash Redis blacklist for logged-out tokens.
+ * Middleware version — for use with app.use().
  */
 export const requireAuth = createMiddleware<{ Variables: HonoVariables }>(
   async (c, next) => {
-    const header = c.req.header("Authorization");
-    if (!header?.startsWith("Bearer ")) {
-      throw new HTTPException(401, { message: "Authorization header required" });
-    }
-
-    const token = header.slice(7);
-    const secret = process.env.JWT_SECRET!;
-
-    let payload: JWTPayload;
-    try {
-      payload = await verifyJWT(token, secret);
-    } catch {
-      throw new HTTPException(401, { message: "Invalid or expired token" });
-    }
-
-    const redis = getRedis();
-    const blacklisted = await redis.exists(RedisKeys.jwtBlacklist(payload.jti));
-    if (blacklisted) {
-      throw new HTTPException(401, { message: "Token has been revoked" });
-    }
-
+    const payload = await getAuthUser(c);
     c.set("user", payload);
     await next();
   }
 );
+
+/**
+ * Direct helper — call inside openapi() handlers to avoid Hono middleware
+ * type-inference issues with @hono/zod-openapi.
+ *
+ * Throws HTTPException(401) on failure; otherwise returns the JWT payload.
+ */
+export async function getAuthUser(c: Context): Promise<JWTPayload> {
+  const header = c.req.header("Authorization");
+  if (!header?.startsWith("Bearer ")) {
+    throw new HTTPException(401, { message: "Authorization header required" });
+  }
+
+  const token = header.slice(7);
+  const secret = process.env.JWT_SECRET!;
+
+  let payload: JWTPayload;
+  try {
+    payload = await verifyJWT(token, secret);
+  } catch {
+    throw new HTTPException(401, { message: "Invalid or expired token" });
+  }
+
+  const redis = getRedis();
+  const blacklisted = await redis.exists(RedisKeys.jwtBlacklist(payload.jti));
+  if (blacklisted) {
+    throw new HTTPException(401, { message: "Token has been revoked" });
+  }
+
+  return payload;
+}
 
 async function verifyJWT(token: string, secret: string): Promise<JWTPayload> {
   const parts = token.split(".");
