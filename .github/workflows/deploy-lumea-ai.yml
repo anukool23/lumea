@@ -30,10 +30,11 @@ jobs:
         working-directory: lumea-ai
         run: |
           docker run --rm \
+            --entrypoint sh \
             -v "$(pwd):/build" \
             -w /build \
             public.ecr.aws/lambda/python:3.12 \
-            sh -c "pip install -r requirements.txt -t dist/ --quiet && cp main.py dist/"
+            -c "pip install -r requirements.txt -t dist/ --quiet && cp main.py dist/"
           cd dist && zip -r ../deployment.zip . -x "*.pyc" -x "__pycache__/*"
 
       - name: Configure AWS credentials
