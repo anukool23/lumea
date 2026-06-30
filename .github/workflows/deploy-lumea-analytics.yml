@@ -1,0 +1,81 @@
+name: Deploy — lumea-analytics
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'main'
+        type: string
+
+env:
+  AWS_REGION:    ${{ secrets.AWS_REGION }}
+  FUNCTION_NAME: ${{ secrets.ANALYTICS_LAMBDA_FUNCTION_NAME }}
+  NODE_VERSION:  '22'
+
+jobs:
+  deploy:
+    name: Build & Deploy to AWS Lambda
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Set up Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: lumea-analytics/package-lock.json
+
+      - name: Install dependencies
+        working-directory: lumea-analytics
+        run: npm ci
+
+      - name: Type check
+        working-directory: lumea-analytics
+        run: npm run type-check
+
+      - name: Build
+        working-directory: lumea-analytics
+        run: |
+          npm run build
+          zip -j deployment.zip dist/index.js
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Update function code
+        working-directory: lumea-analytics
+        run: |
+          aws lambda update-function-code \
+            --function-name "$FUNCTION_NAME" \
+            --zip-file fileb://deployment.zip \
+            --no-cli-pager
+
+      - name: Wait for update to complete
+        run: |
+          aws lambda wait function-updated \
+            --function-name "$FUNCTION_NAME" \
+            --no-cli-pager
+
+      - name: Deployment summary
+        run: |
+          VERSION=$(aws lambda get-function-configuration \
+            --function-name "$FUNCTION_NAME" \
+            --query 'Version' --output text --no-cli-pager)
+          MODIFIED=$(aws lambda get-function-configuration \
+            --function-name "$FUNCTION_NAME" \
+            --query 'LastModified' --output text --no-cli-pager)
+          echo "✅ lumea-analytics deployed"
+          echo "   Branch   : ${{ inputs.branch }}"
+          echo "   Version  : $VERSION"
+          echo "   Modified : $MODIFIED"
