@@ -11,6 +11,15 @@ import emailsRouter from "./routes/emails";
 
 const app = new OpenAPIHono<AppEnv>();
 
+// ── Register security schemes ─────────────────────────────────────────────────
+
+app.openAPIRegistry.registerComponent("securitySchemes", "InternalTokenAuth", {
+  type: "apiKey",
+  in: "header",
+  name: "X-Internal-Token",
+  description: "Shared secret for internal service-to-service calls",
+});
+
 // ── Global middleware ─────────────────────────────────────────────────────────
 
 app.use("*", requestLogger);

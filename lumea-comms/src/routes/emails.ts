@@ -19,6 +19,7 @@ const sendOtpRoute = createRoute({
   path: "/internal/send-otp",
   tags: ["Internal"],
   summary: "Send OTP verification email",
+  security: [{ InternalTokenAuth: [] }] as const,
   request: {
     body: {
       required: true,
@@ -56,6 +57,7 @@ const sendPasswordResetRoute = createRoute({
   path: "/internal/send-password-reset",
   tags: ["Internal"],
   summary: "Send password reset email",
+  security: [{ InternalTokenAuth: [] }] as const,
   request: {
     body: {
       required: true,
@@ -93,6 +95,7 @@ const sendWelcomeRoute = createRoute({
   path: "/internal/send-welcome",
   tags: ["Internal"],
   summary: "Send welcome email after registration",
+  security: [{ InternalTokenAuth: [] }] as const,
   request: {
     body: {
       required: true,
@@ -130,6 +133,7 @@ const sendNewFollowerRoute = createRoute({
   path: "/internal/send-new-follower",
   tags: ["Internal"],
   summary: "Send new-follower notification email",
+  security: [{ InternalTokenAuth: [] }] as const,
   request: {
     body: {
       required: true,
