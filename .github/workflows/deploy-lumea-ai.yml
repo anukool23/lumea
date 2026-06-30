@@ -24,17 +24,18 @@ jobs:
         with:
           ref: ${{ inputs.branch }}
 
-      # ── Build inside the real Lambda Python 3.12 image ───────────────────────
-      # This guarantees the compiled extensions (.so files) match Lambda's ABI.
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # pydantic v1 is pure Python — no compiled .so files, no platform issues
       - name: Build deployment package
         working-directory: lumea-ai
         run: |
-          docker run --rm \
-            --entrypoint sh \
-            -v "$(pwd):/build" \
-            -w /build \
-            public.ecr.aws/lambda/python:3.12 \
-            -c "pip install -r requirements.txt -t dist/ --quiet && cp main.py dist/"
+          rm -rf dist/
+          pip install -r requirements.txt -t dist/ --quiet
+          cp main.py dist/
           cd dist && zip -r ../deployment.zip . -x "*.pyc" -x "__pycache__/*"
 
       - name: Configure AWS credentials
