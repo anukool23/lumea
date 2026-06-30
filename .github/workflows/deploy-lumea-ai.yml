@@ -24,25 +24,16 @@ jobs:
         with:
           ref: ${{ inputs.branch }}
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-          cache-dependency-path: lumea-ai/requirements.txt
-
-      # ── Bundle: install deps into dist/, add main.py, zip ─────────────────
+      # ── Build inside the real Lambda Python 3.12 image ───────────────────────
+      # This guarantees the compiled extensions (.so files) match Lambda's ABI.
       - name: Build deployment package
         working-directory: lumea-ai
         run: |
-          # Install manylinux wheels — compatible with Lambda's Amazon Linux
-          pip install -r requirements.txt -t dist/ \
-            --platform manylinux2014_x86_64 \
-            --python-version 3.12 \
-            --only-binary=:all: \
-            --implementation cp \
-            --quiet
-          cp main.py dist/
+          docker run --rm \
+            -v "$(pwd):/build" \
+            -w /build \
+            public.ecr.aws/lambda/python:3.12 \
+            sh -c "pip install -r requirements.txt -t dist/ --quiet && cp main.py dist/"
           cd dist && zip -r ../deployment.zip . -x "*.pyc" -x "__pycache__/*"
 
       - name: Configure AWS credentials
