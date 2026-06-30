@@ -1,13 +1,18 @@
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 import { logger } from "./logger";
 
+// SNSClient.send() is inherited from @smithy/smithy-client Client<>.
+// moduleResolution:"bundler" doesn't always follow that chain, so we
+// cast to the minimal interface we actually use.
+type Sendable = { send(cmd: unknown): Promise<unknown> };
+
 let _sns: SNSClient | null = null;
 
-function getSNS(): SNSClient {
+function getSNS(): Sendable {
   if (!_sns) {
     _sns = new SNSClient({ region: process.env.AWS_REGION ?? "ap-south-1" });
   }
-  return _sns;
+  return _sns as unknown as Sendable;
 }
 
 export async function publishEvent(
