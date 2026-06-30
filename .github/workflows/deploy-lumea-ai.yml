@@ -35,7 +35,13 @@ jobs:
       - name: Build deployment package
         working-directory: lumea-ai
         run: |
-          pip install -r requirements.txt -t dist/ --quiet
+          # Install manylinux wheels — compatible with Lambda's Amazon Linux
+          pip install -r requirements.txt -t dist/ \
+            --platform manylinux2014_x86_64 \
+            --python-version 3.12 \
+            --only-binary=:all: \
+            --implementation cp \
+            --quiet
           cp main.py dist/
           cd dist && zip -r ../deployment.zip . -x "*.pyc" -x "__pycache__/*"
 
