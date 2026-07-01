@@ -77,11 +77,13 @@ export function RichEditor({ content, onChange, placeholder = "Start writing…"
   );
 
   function setLink() {
+    if (!editor) return;
     const url = prompt("Enter URL");
     if (url) editor.chain().focus().setLink({ href: url }).run();
   }
 
   function insertImage() {
+    if (!editor) return;
     const url = prompt("Enter image URL");
     if (url) editor.chain().focus().setImage({ src: url }).run();
   }
