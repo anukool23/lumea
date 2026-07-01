@@ -1,0 +1,46 @@
+name: Deploy lumea-info
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lumea-info/**"
+      - ".github/workflows/deploy-lumea-info.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lumea-info
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: lumea-info/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_APP_URL: ${{ secrets.INFO_NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_MAIN_URL: ${{ secrets.INFO_NEXT_PUBLIC_MAIN_URL }}
+          NEXT_PUBLIC_WRITE_URL: ${{ secrets.INFO_NEXT_PUBLIC_WRITE_URL }}
+
+      - name: Deploy to Vercel
+        run: |
+          npx vercel --token ${{ secrets.VERCEL_TOKEN }} \
+            --yes \
+            --prod
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INFO }}
