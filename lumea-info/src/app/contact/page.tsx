@@ -85,7 +85,7 @@ export default function ContactPage() {
           <DateTimePicker
             mode="datetime"
             value={callDate}
-            onChange={setCallDate}
+            onChange={(d) => setCallDate(d ?? undefined)}
             placeholder="Pick a date & time…"
             clearable
             minDate={new Date()}
