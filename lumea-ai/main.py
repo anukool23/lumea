@@ -331,5 +331,16 @@ def get_usage(
     return {"usage": usage, "reset_at": "midnight UTC"}
 
 # ── Lambda handler ─────────────────────────────────────────────────────────────
+# Python 3.12+ no longer auto-creates an event loop; mangum 0.17.x calls
+# asyncio.get_event_loop() unconditionally, so we ensure one exists first.
 
-handler = Mangum(app, lifespan="off")
+import asyncio as _asyncio
+
+_mangum = Mangum(app, lifespan="off")
+
+def handler(event, context):  # noqa: ANN001
+    try:
+        _asyncio.get_event_loop()
+    except RuntimeError:
+        _asyncio.set_event_loop(_asyncio.new_event_loop())
+    return _mangum(event, context)
