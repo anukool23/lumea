@@ -15,6 +15,7 @@ Interacrtion Service :- https://md4xmpbgn6yzn37akdt47sajhy0kroyi.lambda-url.ap-s
 Communication Service :- https://zg3eswqgejosft44mey3zdpobe0ukzcz.lambda-url.ap-south-1.on.aws/docs
 Analytics Service:- https://tkw2bs7sy7szlj2xhxi7j3s2vq0xuaks.lambda-url.ap-south-1.on.aws/docs
 Notification Service:- https://asea2mzd4j4wqmulxe5ojoyzsi0otzau.lambda-url.ap-south-1.on.aws/docs
+AI service :- https://ymya7zqbtlgpetlehhne4pgj3i0tjzet.lambda-url.ap-south-1.on.aws/docs
 
 
 
