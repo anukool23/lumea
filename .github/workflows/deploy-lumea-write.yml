@@ -1,0 +1,41 @@
+name: Deploy — lumea-write
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lumea-write/**"
+      - ".github/workflows/deploy-lumea-write.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: lumea-write/package-lock.json
+
+      - name: Install dependencies
+        working-directory: lumea-write
+        run: npm ci
+
+      - name: Type check
+        working-directory: lumea-write
+        run: npm run type-check
+
+      - name: Deploy to Vercel
+        working-directory: lumea-write
+        run: |
+          npx vercel --token "${{ secrets.VERCEL_TOKEN }}" \
+            --yes \
+            ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WRITE }}
