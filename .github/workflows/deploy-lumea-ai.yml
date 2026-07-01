@@ -29,12 +29,17 @@ jobs:
         with:
           python-version: '3.12'
 
-      # pydantic v1 is pure Python — no compiled .so files, no platform issues
+      # Force manylinux2014_x86_64 wheels so pydantic-core matches Lambda's Amazon Linux ABI
       - name: Build deployment package
         working-directory: lumea-ai
         run: |
           rm -rf dist/
-          pip install -r requirements.txt -t dist/ --quiet
+          pip install -r requirements.txt -t dist/ \
+            --platform manylinux2014_x86_64 \
+            --implementation cp \
+            --python-version 312 \
+            --only-binary=:all: \
+            --quiet
           cp main.py dist/
           cd dist && zip -r ../deployment.zip . -x "*.pyc" -x "__pycache__/*"
 

@@ -1,6 +1,6 @@
 """
-Lumea AI Service — FastAPI + litellm
-Deployed on Vercel (serverless Python)
+Lumea AI Service — FastAPI + direct provider calls via httpx
+Deployed on AWS Lambda via mangum
 """
 from __future__ import annotations
 
@@ -12,9 +12,9 @@ import logging
 import os
 import re
 import time
-from typing import Optional
+from typing import Optional, List
 
-import litellm
+import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,9 +30,9 @@ class _JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]
         log: dict = {
             "@timestamp": self.formatTime(record, "%Y-%m-%dT%H:%M:%S"),
-            "level":   record.levelname.lower(),
-            "service": "lumea-ai",
-            "msg":     record.getMessage(),
+            "level":      record.levelname.lower(),
+            "service":    "lumea-ai",
+            "msg":        record.getMessage(),
         }
         if record.exc_info:
             log["exc"] = self.formatException(record.exc_info)
@@ -49,40 +49,59 @@ def _build_logger() -> logging.Logger:
 
 logger = _build_logger()
 
-# ── litellm model cascade (Groq → OpenRouter → Cohere) ───────────────────────
+# ── LLM cascade — direct httpx calls (OpenAI-compatible endpoints) ────────────
 
-MODELS = [
-    "groq/llama-3.1-70b-versatile",
-    "openrouter/meta-llama/llama-3.1-70b-instruct",
-    "command-r-plus",  # Cohere fallback
+_PROVIDERS = [
+    {
+        "name":  "groq",
+        "url":   "https://api.groq.com/openai/v1/chat/completions",
+        "model": "llama-3.1-70b-versatile",
+        "key":   lambda: os.getenv("GROQ_API_KEY", ""),
+    },
+    {
+        "name":  "openrouter",
+        "url":   "https://openrouter.ai/api/v1/chat/completions",
+        "model": "meta-llama/llama-3.1-70b-instruct",
+        "key":   lambda: os.getenv("OPENROUTER_API_KEY", ""),
+    },
+    {
+        "name":  "cohere",
+        "url":   "https://api.cohere.ai/compatibility/v1/chat/completions",
+        "model": "command-r-plus",
+        "key":   lambda: os.getenv("COHERE_API_KEY", ""),
+    },
 ]
 
-def _get_api_key(model: str) -> str:
-    if "groq" in model:
-        return os.getenv("GROQ_API_KEY", "")
-    if "openrouter" in model:
-        return os.getenv("OPENROUTER_API_KEY", "")
-    return os.getenv("COHERE_API_KEY", "")
-
 def llm_call(messages: list, max_tokens: int = 1024) -> str:
-    """Try each model in cascade until one succeeds."""
-    for model in MODELS:
+    """Try each provider in cascade until one succeeds."""
+    for p in _PROVIDERS:
+        api_key = p["key"]()
+        if not api_key:
+            continue
         try:
-            resp = litellm.completion(
-                model=model,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=0.7,
-                api_key=_get_api_key(model),
+            resp = httpx.post(
+                p["url"],
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type":  "application/json",
+                },
+                json={
+                    "model":      p["model"],
+                    "messages":   messages,
+                    "max_tokens": max_tokens,
+                    "temperature": 0.7,
+                },
+                timeout=30.0,
             )
-            content = resp.choices[0].message.content or ""
-            logger.info(f"llm_call model={model} max_tokens={max_tokens}")
+            resp.raise_for_status()
+            content = resp.json()["choices"][0]["message"]["content"] or ""
+            logger.info(f"llm_call provider={p['name']} tokens={max_tokens}")
             return content
         except Exception as e:
-            logger.warning(f"llm_call model={model} failed: {e}")
+            logger.warning(f"llm_call provider={p['name']} failed: {e}")
     raise HTTPException(status_code=503, detail="All AI providers unavailable")
 
-# ── Upstash Redis (HTTP REST — works on Vercel serverless) ───────────────────
+# ── Upstash Redis (HTTP REST) ─────────────────────────────────────────────────
 
 _redis: Optional[Redis] = None
 
@@ -97,7 +116,7 @@ def get_redis() -> Redis:
 
 # ── Rate limiting ─────────────────────────────────────────────────────────────
 
-DAILY_LIMITS: dict[str, int] = {
+DAILY_LIMITS: dict = {
     "generate_ideas": 2,
     "seo_analysis":   5,
     "summarize":      10,
@@ -111,7 +130,7 @@ def consume_quota(user_id: str, action: str) -> None:
     if current >= limit:
         raise HTTPException(
             status_code=429,
-            detail=f"Daily {action} limit ({limit}) reached. Resets at midnight UTC."
+            detail=f"Daily {action} limit ({limit}) reached. Resets at midnight UTC.",
         )
     r.incr(key)
     r.expire(key, 86400)
@@ -123,15 +142,13 @@ def _usage_for(user_id: str, action: str) -> dict:
     limit = DAILY_LIMITS.get(action, 5)
     return {"used": used, "limit": limit, "remaining": max(0, limit - used)}
 
-# ── Auth helpers ──────────────────────────────────────────────────────────────
+# ── Auth ──────────────────────────────────────────────────────────────────────
 
 def verify_api_key(x_api_key: str = Header(default="")) -> None:
-    """Validate X-API-Key. Skipped if API_KEYS not set (local dev)."""
     raw = os.getenv("API_KEYS", "")
     if not raw:
         return
-    valid = set(raw.split("-"))
-    if x_api_key not in valid:
+    if x_api_key not in set(raw.split("-")):
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
 def verify_jwt(authorization: str = Header(...)) -> dict:
@@ -144,7 +161,7 @@ def verify_jwt(authorization: str = Header(...)) -> dict:
     h, p, s = parts
     secret = os.getenv("JWT_SECRET", "")
     try:
-        sig = base64.urlsafe_b64decode(s + "==")
+        sig      = base64.urlsafe_b64decode(s + "==")
         expected = hmac.new(secret.encode(), f"{h}.{p}".encode(), hashlib.sha256).digest()
         if not hmac.compare_digest(sig, expected):
             raise HTTPException(status_code=401, detail="Invalid token signature")
@@ -157,7 +174,7 @@ def verify_jwt(authorization: str = Header(...)) -> dict:
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-# ── FastAPI app ───────────────────────────────────────────────────────────────
+# ── App ───────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
     title="Lumea AI Service",
@@ -186,13 +203,13 @@ app.add_middleware(
 
 class IdeaRequest(BaseModel):
     topic: Optional[str] = None
-    interests: list[str] = []
-    existing_titles: list[str] = []
+    interests: List[str] = []
+    existing_titles: List[str] = []
 
 class SEORequest(BaseModel):
     title: str
     content: str
-    tags: list[str] = []
+    tags: List[str] = []
     excerpt: Optional[str] = None
 
 class SummarizeRequest(BaseModel):
@@ -238,7 +255,7 @@ Respond with ONLY the JSON array, no markdown."""
     except Exception:
         ideas = [{"title": raw, "hook": "", "outline": []}]
 
-    logger.info(f"generate_ideas user={user['user_id']} count={len(ideas)}")
+    logger.info(f"generate_ideas user={user['user_id']}")
     return {"ideas": ideas[:5], "generated_at": time.strftime('%Y-%m-%dT%H:%M:%SZ')}
 
 @app.post("/api/ai/seo-analysis", tags=["AI"])
@@ -280,7 +297,7 @@ Respond with ONLY the JSON object, no markdown."""
         result = {"score": 0, "improvements": [raw]}
 
     result["word_count"] = word_count
-    logger.info(f"seo_analysis user={user['user_id']} title='{req.title}'")
+    logger.info(f"seo_analysis user={user['user_id']}")
     return result
 
 @app.post("/api/ai/summarize", tags=["AI"])
@@ -313,6 +330,6 @@ def get_usage(
     usage = {action: _usage_for(user["user_id"], action) for action in DAILY_LIMITS}
     return {"usage": usage, "reset_at": "midnight UTC"}
 
-# ── Lambda handler ────────────────────────────────────────────────────────────
+# ── Lambda handler ─────────────────────────────────────────────────────────────
 
 handler = Mangum(app, lifespan="off")
