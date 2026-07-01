@@ -24,12 +24,12 @@ jobs:
         with:
           ref: ${{ inputs.branch }}
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.14
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.14'
 
-      # Force manylinux2014_x86_64 wheels so pydantic-core matches Lambda's Amazon Linux ABI
+      # Force manylinux2014_x86_64 + cp314 wheels to match Lambda's Python 3.14 ABI
       - name: Build deployment package
         working-directory: lumea-ai
         run: |
@@ -37,7 +37,7 @@ jobs:
           pip install -r requirements.txt -t dist/ \
             --platform manylinux2014_x86_64 \
             --implementation cp \
-            --python-version 312 \
+            --python-version 314 \
             --only-binary=:all: \
             --quiet
           cp main.py dist/
