@@ -15,9 +15,9 @@ type Params = { service: string; path: string[] };
 
 async function proxy(
   req: NextRequest,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ): Promise<NextResponse> {
-  const { service, path } = await params as unknown as Params;
+  const { service, path } = await params;
   const base = SERVICE_MAP[service];
 
   if (!base) {
